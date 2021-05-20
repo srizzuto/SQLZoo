@@ -449,3 +449,235 @@ Americas	732240
 Middle East	13403102
 South America	17740392
 South Asia	9437710
+
+/*----------------------JOIN------------------ */
+
+SELECT matchid, player FROM goal 
+  WHERE teamid LIKE 'GER'
+
+SELECT id,stadium,team1,team2
+  FROM game
+WHERE id = 1012;
+
+SELECT player, teamid, stadium, mdate
+  FROM game JOIN goal ON (id=matchid) where teamid LIKE 'GER'
+
+SELECT team1, team2, player
+FROM game JOIN goal ON (id=matchid) where player LIKE 'Mario%'
+
+SELECT player, teamid, coach, gtime
+  FROM goal join eteam ON (teamid=id)
+ WHERE gtime<=10
+
+Select mdate, teamname from game JOIN eteam ON (team1=eteam.id) where coach like 'Fernando Santos'
+
+Select player from goal join game on (matchid=id) where stadium LIKE 'National Stadium, Warsaw';
+
+SELECT DISTINCT player
+  FROM game JOIN goal ON matchid = id 
+    WHERE (team1='GER' OR team2='GER') AND teamid!='GER'
+
+SELECT teamname, COUNT(*)
+  FROM eteam JOIN goal ON id=teamid
+ GROUP BY teamname
+
+select stadium, count(*) from game join goal on (matchid=id) group by stadium
+
+SELECT matchid,mdate, count(*)
+  FROM game JOIN goal ON matchid = id 
+ WHERE (team1 = 'POL' OR team2 = 'POL') Group by matchid, mdate
+
+Select matchid, mdate, Count(*) from game join goal on (matchid=id) where teamid LIKE 'GER' group by matchid, mdate
+
+SELECT mdate,
+  team1,
+  SUM(CASE WHEN teamid=team1 THEN 1 ELSE 0 END) score1,
+  team2,
+  SUM(CASE WHEN teamid=team2 THEN 1 ELSE 0 END) score2
+  FROM game LEFT JOIN goal ON matchid = id
+GROUP BY mdate, matchid, team1, team2
+ORDER BY mdate, matchid, team1, team2
+
+
+/* -------------------- MORE JOIN -------------------*/
+
+SELECT id, title
+ FROM movie
+ WHERE yr=1962
+
+Select yr from movie where title = 'Citizen Kane'
+
+Select id, title, yr from movie where title Like '%Star Trek%'
+
+Select id from actor where name= 'Glenn Close'
+
+Select id from movie where title = 'Casablanca'
+
+Select name from actor join casting on (id = actorid) where movieid = 27
+
+Select name from actor join casting on (id = actorid) where movieid LIKE (Select id from movie where title = 'Alien' )
+
+Select title from movie join casting on id=movieid  where actorid LIKE (Select id from actor where name = 'Harrison Ford' )
+
+Select title from movie join casting on id=movieid  where actorid LIKE (Select id from actor where name = 'Harrison Ford' ) and ord != 1
+
+SELECT title, name
+FROM movie
+ JOIN casting
+ON movie.id = casting.movieid
+ JOIN actor 
+ON actor.id = casting.actorid
+WHERE yr = '1962' AND ord=1;
+
+SELECT yr,COUNT(title) FROM
+  movie JOIN casting ON movie.id=movieid
+        JOIN actor   ON actorid=actor.id
+WHERE name='Doris Day'
+GROUP BY yr
+HAVING COUNT(title) > 1
+
+SELECT title, name 
+FROM movie
+INNER JOIN casting
+ON movie.id = casting.movieid
+INNER JOIN actor
+ON actor.id = casting.actorid
+WHERE movieid IN ( 
+  SELECT movieid FROM casting 
+  WHERE actorid IN (
+    SELECT id FROM actor
+    WHERE name='Julie Andrews') )
+AND ord =1;
+
+SELECT name
+FROM actor
+JOIN casting
+ON actor.id=casting.actorid
+ JOIN movie
+ON movie.id = casting.movieid
+WHERE ord=1
+GROUP BY name
+HAVING COUNT(actorid)>=15
+
+SELECT title, COUNT(movieid)
+FROM movie
+ JOIN casting
+ON movie.id = casting.movieid
+ JOIN actor
+ON actor.id = casting.actorid
+WHERE yr= '1978'
+GROUP BY title
+ORDER BY COUNT(movieid) DESC, title
+
+SELECT DISTINCT name
+FROM actor
+ JOIN casting
+ON actor.id=casting.actorid
+JOIN movie
+ON movie.id = casting.movieid
+WHERE movieid IN (
+  SELECT movieid FROM casting 
+  WHERE actorid IN (
+    SELECT id FROM actor 
+    WHERE name LIKE 'Art Garfunkel'))
+AND name NOT LIKE 'Art Garfunkel'
+
+/*-----------------------NULL--------------------------*/
+
+
+Select teacher.name from teacher Left join dept on dept= dept.id where dept is null 
+
+SELECT teacher.name, dept.name
+ FROM teacher INNER JOIN dept
+           ON (teacher.dept=dept.id)
+
+SELECT teacher.name, dept.name
+ FROM teacher left JOIN dept
+           ON (teacher.dept=dept.id)
+
+SELECT teacher.name, dept.name
+ FROM teacher right JOIN dept
+           ON (teacher.dept=dept.id)
+
+SELECT name, COALESCE(mobile, '07986 444 2266') 
+FROM teacher
+
+SELECT teacher.name, COALESCE(dept.name, 'None') 
+FROM teacher left join dept on dept = dept.id
+
+Select Count(*) teachers, Count(mobile) mobiles from teacher
+
+Select dept.name ,count(teacher.name) from teacher right join dept on dept = dept.id group by dept.name
+
+SELECT teacher.name, 
+CASE teacher.dept 
+WHEN '1' THEN 'Sci'
+ELSE 'Art'
+END dept
+FROM teacher
+
+
+SELECT teacher.name, 
+CASE teacher.dept 
+WHEN '1' THEN 'Sci'
+WHEN '2' THEN 'Sci'
+ELSE 'None'
+END dept
+FROM teacher
+
+/* ------------------- SELF JOIN -------------------- */
+select count(*) from stops
+
+select id from stops where name like 'Craiglockhart' 
+
+select id, name from stops join route on stops.id = stop where company like 'LRT' and num like '4'
+
+SELECT company, num, COUNT(*)
+FROM route WHERE stop=149 OR stop=53
+GROUP BY company, num Having COUNT(*) = 2
+
+SELECT a.company, a.num, a.stop, b.stop
+FROM route a JOIN route b ON
+  (a.company=b.company AND a.num=b.num)
+WHERE a.stop=53 and b.stop=149
+
+SELECT a.company, a.num, stopa.name, stopb.name
+FROM route a JOIN route b ON
+  (a.company=b.company AND a.num=b.num)
+  JOIN stops stopa ON (a.stop=stopa.id)
+  JOIN stops stopb ON (b.stop=stopb.id)
+WHERE stopa.name='Craiglockhart' and  stopb.name='London Road'
+
+SELECT DISTINCT a.company, a.num
+FROM route a JOIN route b ON
+  (a.company=b.company AND a.num=b.num)
+  JOIN stops stopa ON (a.stop=stopa.id)
+  JOIN stops stopb ON (b.stop=stopb.id)
+WHERE stopa.name='Haymarket' and  stopb.name='Leith' 
+
+SELECT DISTINCT a.company, a.num
+FROM route a JOIN route b ON
+  (a.company=b.company AND a.num=b.num)
+  JOIN stops stopa ON (a.stop=stopa.id)
+  JOIN stops stopb ON (b.stop=stopb.id)
+WHERE stopa.name='Craiglockhart' and  stopb.name='Tollcross' 
+
+SELECT DISTINCT  stopb.name, a.company, a.num
+FROM route a JOIN route b ON
+  ( a.company= b.company and a.num=b.num)
+  JOIN stops stopa ON (a.stop=stopa.id)
+  JOIN stops stopb ON (b.stop=stopb.id)
+WHERE stopa.name='Craiglockhart' and  a.company='LRT' 
+
+SELECT  a.num, a.company,  stops.name,  d.num, d.company
+FROM route a JOIN route b ON
+  ( a.company= b.company and a.num=b.num)
+  JOIN stops  ON (b.stop=stops.id)
+  JOIN route c ON
+  ( c.stop= stops.id)
+ JOIN route d ON
+  ( c.company= d.company and c.num=d.num)
+WHERE a.stop = (SELECT id FROM stops WHERE name = 'Craiglockhart')
+AND d.stop = (SELECT id FROM stops WHERE name = 'Lochend')
+ORDER BY a.num, stops.name, d.num;
+
